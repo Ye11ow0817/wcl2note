@@ -1,0 +1,5 @@
+/* Keep official positioning in viewport coordinates inside native dialogs.
+   Fonts, framing, content and all loading/error visuals come from Wowhead. */
+dialog[open] .wowhead-tooltip {
+  position: fixed !important;
+}

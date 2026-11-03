@@ -1,0 +1,95 @@
+{
+  "name": "wcl2note",
+  "productName": "WCL2NOTE",
+  "version": "1.0.0",
+  "description": "将 Warcraft Logs 战斗记录转换为 MRT 团队笔记的 Windows 应用",
+  "author": "Ye11ow",
+  "private": true,
+  "type": "module",
+  "main": "dist-electron/main.cjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "postinstall": "node scripts/install-electron.mjs",
+    "dev": "node scripts/dev.mjs",
+    "start": "electron .",
+    "build:electron": "node scripts/build-electron.mjs",
+    "build:buff-categories": "node scripts/build-buff-categories.mjs",
+    "check:buff-categories": "node scripts/build-buff-categories.mjs --check",
+    "check:buff-coverage": "node scripts/build-buff-categories.mjs --check --require-coverage",
+    "build": "npm run build:buff-categories && npm run typecheck && vite build && npm run build:electron",
+    "typecheck": "tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.renderer.json && tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run",
+    "test:electron": "npm run build && playwright test",
+    "test:portable": "node scripts/test-portable.mjs",
+    "package:win": "npm run build && node scripts/package-win.mjs",
+    "package:win:dir": "npm run build && node scripts/package-win.mjs --dir",
+    "check:wcl": "node scripts/check-wcl.mjs",
+    "format": "prettier --write src scripts tests *.json *.ts *.js README.md docs/*.md"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.80.7",
+    "antd": "6.6.8",
+    "lucide-react": "0.511.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zod": "3.25.67"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.28.0",
+    "@playwright/test": "1.64.1",
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "@vitejs/plugin-react": "4.5.2",
+    "electron": "44.9.2",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.25.12",
+    "eslint": "9.28.0",
+    "prettier": "3.5.3",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.72.0",
+    "vite": "6.4.4",
+    "vitest": "4.1.11"
+  },
+  "overrides": {
+    "app-builder-lib": {
+      "@electron/get": "5.0.0"
+    }
+  },
+  "build": {
+    "appId": "com.ye11ow.wcl2note",
+    "productName": "WCL2NOTE",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false,
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "WCL2NOTE-${version}-${env.WCL_BUILD_DATE}-win-${arch}-portable.${ext}"
+    },
+    "publish": null
+  }
+}

@@ -1,0 +1,6 @@
+# Generated compact lookup; regenerate with npm run build:buff-categories.
+src/domain/data/buff-categories.json
+
+# Unmodified official widget snapshots for deterministic integration tests.
+tests/fixtures/wowhead/tooltips.js.txt
+tests/fixtures/wowhead/universal.css

@@ -1,0 +1,540 @@
+.skill-profile-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+.skill-profile-controls > button {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 4px 7px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-panel);
+  color: var(--text);
+  white-space: nowrap;
+}
+.skill-profile-controls > button:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+}
+.skill-profile-controls > button:disabled {
+  background: var(--surface-panel);
+  border-color: var(--border);
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+.skill-profile-controls > .clear-selection {
+  margin-left: 0;
+  color: var(--danger);
+  gap: 4px;
+}
+.skill-profile-controls > .clear-selection:disabled {
+  color: var(--text-muted);
+}
+.skill-profile-picker {
+  position: relative;
+  width: 140px;
+  min-width: 70px;
+  flex: 0 1 140px;
+}
+.skill-profile-picker > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  min-height: 28px;
+  padding: 4px 7px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-inset);
+  cursor: pointer;
+}
+.skill-profile-picker > summary::-webkit-details-marker,
+.profile-library-item > summary::-webkit-details-marker {
+  display: none;
+}
+.skill-profile-picker > summary > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.skill-profile-picker > summary > svg {
+  flex-shrink: 0;
+}
+.profile-dirty {
+  flex: 0 0 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #edc37d;
+}
+.skill-profile-menu {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 100;
+  width: 240px;
+  max-height: calc(100dvh - 300px);
+  padding: 8px;
+  border: 1px solid var(--border-hover);
+  border-radius: 7px;
+  background: var(--surface-panel);
+  box-shadow: 0 10px 30px var(--shadow-popup);
+}
+.skill-profile-menu input,
+.skill-profile-dialog input:not([type="checkbox"]) {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 9px;
+  background: var(--surface-inset);
+}
+.skill-profile-menu > input,
+.profile-menu-actions {
+  flex-shrink: 0;
+}
+.profile-options {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px;
+  max-height: min(360px, calc(100dvh - 220px));
+  overflow-y: auto;
+  min-height: 0;
+}
+.profile-options > button {
+  justify-content: flex-start;
+  padding: 8px;
+  border-color: transparent;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.profile-options > button > span {
+  flex: 1;
+}
+.profile-options > button.active {
+  background: var(--surface-selected);
+  color: var(--text);
+}
+.profile-menu-actions {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border-subtle);
+}
+.profile-menu-actions > button {
+  justify-content: flex-start;
+  min-height: 28px;
+  padding: 5px 8px;
+  border-color: transparent;
+  background: transparent;
+}
+.skill-profile-dialog {
+  width: min(480px, calc(100vw - 40px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-hover);
+  border-radius: 9px;
+  background: var(--surface-panel);
+  color: var(--text);
+  box-shadow: 0 20px 70px var(--shadow-dialog);
+}
+.skill-profile-dialog.profile-manager {
+  width: min(650px, calc(100vw - 40px));
+}
+.skill-profile-dialog::backdrop {
+  background: var(--backdrop);
+}
+.profile-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.profile-dialog-header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.profile-dialog-header .profile-close {
+  border-color: transparent;
+  background: transparent;
+  padding: 4px;
+}
+.profile-dialog-body {
+  padding: 16px;
+}
+.profile-manager .profile-dialog-body {
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+}
+.profile-name-field {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.profile-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: auto;
+  min-height: 56px;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.profile-dialog-actions > button {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.profile-library-item {
+  margin: 6px -8px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-left-width: 3px;
+  border-bottom-color: var(--border-subtle);
+  border-radius: 6px;
+}
+.profile-library-item:first-of-type {
+  margin-top: 12px;
+}
+.profile-library-item > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  min-height: 48px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.profile-library-item[open] {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+  border-left-color: var(--accent);
+}
+.profile-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.profile-name strong {
+  font-weight: 500;
+}
+.profile-name .profile-rename {
+  display: inline-flex;
+  vertical-align: middle;
+  padding: 3px;
+  margin-left: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+}
+.profile-name .profile-rename:hover {
+  color: var(--accent);
+}
+.profile-name input {
+  width: min(180px, 100%);
+  padding: 4px 6px;
+}
+.profile-item-actions {
+  display: inline-flex;
+  gap: 5px;
+  margin-left: auto;
+}
+.profile-item-actions > button {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+.profile-item-actions > .profile-apply {
+  min-width: 52px;
+}
+.profile-item-actions > .profile-apply:disabled {
+  background: var(--surface-selected);
+  border-color: var(--border-selected);
+  color: var(--accent);
+  cursor: default;
+}
+.profile-item-actions > .profile-delete {
+  border-color: transparent;
+  background: transparent;
+  padding: 5px;
+  color: var(--danger);
+}
+.profile-expand {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.profile-library-item[open] > summary .profile-expand {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+.profile-skill-list {
+  padding: 0 0 12px;
+}
+.profile-skill-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.profile-skill-list-heading > button {
+  padding: 4px 7px;
+  gap: 4px;
+  font-size: 11px;
+}
+.profile-skill-picker-dialog .profile-dialog-header h2 {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.profile-skill-picker-dialog .profile-close {
+  flex-shrink: 0;
+}
+.profile-skill-picker-dialog .profile-dialog-body {
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+}
+.profile-skill-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+.profile-skill-filters > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.profile-skill-filters select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-inset);
+  color: var(--text);
+  font: inherit;
+}
+.profile-skill-filters select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.profile-skill-options {
+  max-height: min(360px, calc(100dvh - 300px));
+  overflow-y: auto;
+  border-top: 1px solid var(--border-subtle);
+}
+.profile-skill-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  font-size: 12px;
+}
+.profile-skill-option:hover,
+.profile-skill-option:has(input:checked):not(.is-added) {
+  background: var(--surface-hover);
+}
+.profile-skill-option.is-added {
+  color: var(--text-muted);
+  cursor: default;
+}
+.profile-skill-option .game-icon {
+  --icon-size: 24px;
+  flex-shrink: 0;
+}
+.profile-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.profile-skill-id {
+  margin-left: 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.profile-option-channel,
+.profile-option-added {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.profile-skill-loading {
+  margin: 8px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.profile-source-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--danger);
+  font-size: 12px;
+}
+.profile-source-error > span {
+  flex: 1;
+}
+.profile-source-error > button {
+  flex-shrink: 0;
+  padding: 4px 7px;
+  font-size: 11px;
+}
+.profile-skill-section {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 10px;
+}
+.profile-skill-section + .profile-skill-section {
+  margin-top: 10px;
+}
+.profile-skill-section h3 {
+  display: flex;
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 12px;
+}
+.profile-skill-section h3 small {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.profile-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+}
+.profile-skill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 32px;
+  font-size: 12px;
+}
+.profile-skill .game-icon {
+  --icon-size: 22px;
+}
+.profile-skill > span:not(.game-icon) {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.profile-skill > small {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.profile-missing,
+.profile-warning {
+  color: #edc37d;
+}
+.profile-warning,
+.profile-error,
+.profile-edit-status {
+  font-size: 12px;
+}
+.profile-error {
+  margin: 12px 16px;
+  color: var(--danger);
+}
+.profile-inline-error {
+  display: block;
+  color: var(--danger);
+  font-size: 11px;
+}
+.profile-edit-status {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+}
+.profile-save-skills {
+  margin-top: 16px;
+}
+.profile-save-skills > summary {
+  color: var(--accent);
+  cursor: pointer;
+  padding: 5px 0;
+}
+.profile-save-skills[open] > summary {
+  margin-bottom: 8px;
+}
+.profile-empty {
+  display: block;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.profile-skill > .profile-remove-skill {
+  flex: 0 0 auto;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+}
+.profile-skill > .profile-remove-skill:hover {
+  color: var(--danger);
+  background: var(--surface-hover);
+}
+.profile-confirm-dialog {
+  width: min(380px, calc(100vw - 40px));
+}
+.profile-confirm-dialog .profile-dialog-body {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.profile-dialog-actions > .profile-confirm-delete {
+  color: var(--text-on-accent);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+@media (max-width: 1100px) {
+  .analysis-primary {
+    gap: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .analysis-actor > .actor-picker summary {
+    padding-left: 6px;
+    padding-right: 6px;
+    gap: 5px;
+  }
+  .analysis-primary > .view-toggle > button {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .skill-profile-controls {
+    gap: 4px;
+  }
+  .skill-profile-controls > button {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .skill-profile-picker {
+    flex-basis: 120px;
+    width: 120px;
+  }
+  .skill-profile-picker > summary {
+    gap: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
