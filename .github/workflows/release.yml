@@ -1,0 +1,83 @@
+name: Windows packages
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run release:validate
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run package:win
+      - run: npm run release:verify
+      - name: Test packaged update flow
+        env:
+          WCL2NOTE_EXECUTABLE: ${{ github.workspace }}\release\win-unpacked\WCL2NOTE.exe
+        run: npx playwright test tests/electron/updates.spec.ts
+      - run: npm run test:packaged
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-x64-${{ github.sha }}
+          path: |
+            release/WCL2NOTE-*-win-x64-setup.exe
+            release/update.json
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: stable-github-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@v8
+        with:
+          name: windows-x64-${{ github.sha }}
+          path: release
+      - run: npm run release:verify
+      - name: Publish complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' > release-state.txt; then
+            test "$(cat release-state.txt)" = true || { echo "Published versions must not be overwritten"; exit 1; }
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "WCL2NOTE $RELEASE_TAG" --notes-file RELEASE_NOTES.md
+          fi
+          gh release upload "$RELEASE_TAG" release/*-win-x64-setup.exe release/update.json release/SHA256SUMS.txt --clobber
+          export LATEST_RELEASE_TAG
+          LATEST_RELEASE_TAG=$(gh release list --exclude-drafts --exclude-pre-releases --limit 100 --json isLatest,tagName --jq '.[] | select(.isLatest) | .tagName')
+          latest=$(node scripts/release.mjs latest)
+          gh release edit "$RELEASE_TAG" --notes-file RELEASE_NOTES.md --draft=false --latest="$latest"

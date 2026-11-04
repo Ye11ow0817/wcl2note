@@ -23,6 +23,7 @@ import { WclClient } from "./wcl/client";
 import { defaultCredentials } from "./wcl/default-credentials";
 import { noteFilename, windowsText } from "./export";
 import { IconCache } from "./icons";
+import { allowedUpdateUrl, UpdateService } from "./updates";
 
 app.setName("WCL2NOTE");
 app.setAppUserModelId("com.ye11ow.wcl2note");
@@ -62,6 +63,8 @@ const contentSecurityPolicy = [
 let window: BrowserWindow | null = null;
 let store: SettingsStore;
 let icons: IconCache;
+let updates: UpdateService;
+let startupUpdateCheck: ReturnType<typeof setTimeout> | undefined;
 let settingsError: Error | undefined;
 const wcl = new WclClient(defaultCredentials, (input, init) =>
   fetch(input, init),
@@ -87,6 +90,32 @@ function assertTrusted(event: IpcMainInvokeEvent) {
 const requestId = z.string().regex(/^[a-zA-Z0-9-]{1,128}$/);
 const noteText = z.string().max(20 * 1024 * 1024);
 function registerHandlers() {
+  ipcMain.handle("updates:state", (event) =>
+    reply(() => {
+      assertTrusted(event);
+      return updates.snapshot();
+    }),
+  );
+  ipcMain.handle("updates:check", (event) =>
+    reply(() => {
+      assertTrusted(event);
+      return updates.check();
+    }),
+  );
+  ipcMain.handle("updates:download", (event) =>
+    reply(() => {
+      assertTrusted(event);
+      return updates.download();
+    }),
+  );
+  ipcMain.handle("updates:install", (event) =>
+    reply(async () => {
+      assertTrusted(event);
+      const result = await updates.install((path) => shell.openPath(path));
+      if (result.status === "installing") app.quit();
+      return result;
+    }),
+  );
   ipcMain.handle("app:version", (event) =>
     reply(() => {
       assertTrusted(event);
@@ -275,7 +304,13 @@ function createWindow() {
     event.preventDefault(),
   );
   window.webContents.on("render-process-gone", () => cancelRequests());
-  window.once("ready-to-show", () => window?.show());
+  window.once("ready-to-show", () => {
+    window?.show();
+    if (app.isPackaged)
+      startupUpdateCheck = setTimeout(() => {
+        if (updates.snapshot().status === "idle") void updates.check();
+      }, 3000);
+  });
   window.on("closed", () => {
     cancelRequests();
     window = null;
@@ -335,6 +370,28 @@ app
       },
     );
     await registerProtocol();
+    const updateSession = session.fromPartition("updates");
+    // Chromium fetch rejects manual redirects. Validate every hop in this
+    // dedicated session before allowing its native streaming fetch to follow it.
+    updateSession.webRequest.onBeforeRequest((details, callback) => {
+      callback({ cancel: !allowedUpdateUrl(details.url) });
+    });
+    updates = new UpdateService({
+      currentVersion: app.getVersion(),
+      downloadsDirectory: profile
+        ? join(app.getPath("userData"), "downloads")
+        : app.getPath("downloads"),
+      fetch: (url, init) =>
+        updateSession.fetch(url, { ...init, redirect: "follow" }),
+      changed: (snapshot) => {
+        if (
+          window &&
+          !window.isDestroyed() &&
+          !window.webContents.isDestroyed()
+        )
+          window.webContents.send("updates:changed", snapshot);
+      },
+    });
     store = new SettingsStore(app.getPath("userData"), safeStorage);
     try {
       wcl.setCredentials(await store.load());
@@ -380,6 +437,8 @@ app
 app.on("window-all-closed", () => app.quit());
 let flushing = false;
 app.on("before-quit", (event) => {
+  clearTimeout(startupUpdateCheck);
+  updates?.dispose();
   cancelRequests();
   wcl.dispose();
   if (store && !flushing) {

@@ -1,4 +1,5 @@
 import type { Query } from "./contract";
+import type { UpdateSnapshot } from "./updates";
 
 export type CredentialMode = "default" | "custom" | "incomplete";
 export interface Credentials {
@@ -29,4 +30,9 @@ export interface DesktopBridge {
   ) => Promise<Reply<{ canceled: boolean }>>;
   openCredentialsPage: () => Promise<Reply<void>>;
   version: () => Promise<Reply<string>>;
+  getUpdateState: () => Promise<Reply<UpdateSnapshot>>;
+  checkForUpdates: () => Promise<Reply<UpdateSnapshot>>;
+  downloadUpdate: () => Promise<Reply<UpdateSnapshot>>;
+  installUpdate: () => Promise<Reply<UpdateSnapshot>>;
+  onUpdateState: (listener: (snapshot: UpdateSnapshot) => void) => () => void;
 }

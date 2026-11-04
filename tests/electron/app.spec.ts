@@ -727,9 +727,9 @@ test("阶段同时筛选两种视图和跨类型 Note，恢复全部保留勾选
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
   }, file);
   await page.getByRole("button", { name: "保存 txt", exact: true }).click();
-  await expect(page.locator("footer [role=status]")).toContainText(
-    "已保存 UTF-8",
-  );
+  await expect
+    .poll(() => readFile(file, "utf8").catch(() => ""))
+    .toBe(expected);
   expect(await readFile(file, "utf8")).toBe(expected);
   await page.getByRole("tab", { name: "施法", exact: true }).click();
   await page.getByRole("button", { name: "敌对", exact: true }).click();
@@ -1612,17 +1612,15 @@ test("NSRT 格式切换、动态计时器提示与阶段时间、原生复制和
   expect(await desktop.evaluate(({ clipboard }) => clipboard.readText())).toBe(
     expected,
   );
-  await expect(page.locator("footer [role=status]")).toContainText(
-    "已复制 NSRT 文本",
-  );
+  await expect(page.locator("main > footer")).toHaveCount(0);
   const file = info.outputPath("NSRT团队笔记.txt");
   await desktop.evaluate(({ dialog }, file) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
   }, file);
   await page.getByRole("button", { name: "保存 txt", exact: true }).click();
-  await expect(page.locator("footer [role=status]")).toContainText(
-    "已保存 UTF-8",
-  );
+  await expect
+    .poll(() => readFile(file, "utf8").catch(() => ""))
+    .toBe(expected);
   expect(await readFile(file, "utf8")).toBe(expected);
   await desktop.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].setSize(960, 720),
@@ -1825,9 +1823,9 @@ test("实际 Electron 窗口：跨标签与阶段、原生剪贴板、原生保�
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
   }, file);
   await page.getByRole("button", { name: "保存 txt" }).click();
-  await expect(page.locator("footer [role=status]")).toContainText(
-    "已保存 UTF-8",
-  );
+  await expect
+    .poll(() => readFile(file, "utf8").catch(() => ""))
+    .toBe(expected);
   expect(await readFile(file, "utf8")).toBe(expected);
   await page.screenshot({
     path: info.outputPath("desktop.png"),
@@ -2803,14 +2801,16 @@ test("自定义凭据自动保存、真实 Windows 加密、重启恢复与默�
   await expect(page.locator(".settings-status")).toContainText(
     "已自动保存到本机",
   );
-  await expect(page.locator(".mode")).toContainText("自定义凭据");
+  await expect(page.locator(".mode")).toHaveCount(0);
   const disk = await readFile(resolve(profile, "credentials.json"), "utf8");
   expect(disk).not.toContain("fixture-client-secret");
   await closeAfterLoadCheck(desktop);
   const restarted = await launch(profile);
   try {
     const nextPage = await restarted.firstWindow();
-    await expect(nextPage.locator(".mode")).toContainText("自定义凭据");
+    await expect(
+      nextPage.getByRole("button", { name: "设置", exact: true }),
+    ).toBeEnabled();
     await nextPage.getByRole("button", { name: "设置", exact: true }).click();
     await expect(nextPage.getByLabel("Client ID", { exact: true })).toHaveValue(
       "fixture-client-id",
@@ -2819,7 +2819,9 @@ test("自定义凭据自动保存、真实 Windows 加密、重启恢复与默�
       nextPage.getByLabel("Client Secret", { exact: true }),
     ).toHaveValue("fixture-client-secret");
     await nextPage.getByRole("button", { name: "恢复默认" }).click();
-    await expect(nextPage.locator(".mode")).toContainText("内置凭据");
+    await expect(nextPage.locator(".settings-status")).toContainText(
+      "已恢复内置凭据",
+    );
     await expect(
       nextPage.getByLabel("Client Secret", { exact: true }),
     ).toHaveValue("");
@@ -2875,9 +2877,7 @@ test("WCL 权限错误可重试恢复，取消另存为不显示保存成功", a
     dialog.showSaveDialog = async () => ({ canceled: true, filePath: "" });
   });
   await page.getByRole("button", { name: "保存 txt" }).click();
-  await expect(page.locator("footer [role=status]")).not.toContainText(
-    "已保存",
-  );
+  await expect(page.locator("main > footer")).toHaveCount(0);
 });
 
 test("渲染进程隔离、设置弹窗与固定链接、最小窗口三栏可见和战斗栏折叠", async ({
@@ -2927,7 +2927,7 @@ test("渲染进程隔离、设置弹窗与固定链接、最小窗口三栏可�
   });
   await settingsButton.click();
   const settingsDialog = page.getByRole("dialog", {
-    name: "Warcraft Logs 凭据",
+    name: "设置",
   });
   await expect(settingsDialog).toBeVisible();
   expect(await page.locator(".workspace").boundingBox()).toEqual(
@@ -4763,10 +4763,13 @@ test("技能配置：保存、另存为、管理和重启后恢复", async ({
   await expect(
     controls.getByRole("button", { name: "保存", exact: true }),
   ).toBeDisabled();
-  await page
-    .locator("footer [role=status]")
-    .getByRole("button", { name: "撤销", exact: true })
-    .click();
+  await expect(
+    page.getByRole("button", { name: "撤销", exact: true }),
+  ).toHaveCount(0);
+  await chooseSkillProfile(page, "治疗团减");
+  await expect(aura).toBeChecked();
+  await expect(barrier).not.toBeChecked();
+  await barrier.check();
   await expect(preview).toHaveValue(beforeClear);
   await expect(
     controls.locator(".skill-profile-picker > summary"),

@@ -1,7 +1,7 @@
 {
   "name": "wcl2note",
   "productName": "WCL2NOTE",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "将 Warcraft Logs 战斗记录转换为 MRT 团队笔记的 Windows 应用",
   "author": "Ye11ow",
   "private": true,
@@ -25,9 +25,11 @@
     "test": "npm run test:unit",
     "test:unit": "vitest run",
     "test:electron": "npm run build && playwright test",
-    "test:portable": "node scripts/test-portable.mjs",
-    "package:win": "npm run build && node scripts/package-win.mjs",
+    "test:packaged": "node scripts/test-packaged.mjs",
+    "package:win": "npm run build && node scripts/package-win.mjs && node scripts/release.mjs generate",
     "package:win:dir": "npm run build && node scripts/package-win.mjs --dir",
+    "release:validate": "node scripts/release.mjs validate",
+    "release:verify": "node scripts/release.mjs verify",
     "check:wcl": "node scripts/check-wcl.mjs",
     "format": "prettier --write src scripts tests *.json *.ts *.js README.md docs/*.md"
   },
@@ -80,15 +82,24 @@
       "icon": "build/icon.ico",
       "target": [
         {
-          "target": "portable",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
         }
       ]
     },
-    "portable": {
-      "artifactName": "WCL2NOTE-${version}-${env.WCL_BUILD_DATE}-win-${arch}-portable.${ext}"
+    "nsis": {
+      "artifactName": "WCL2NOTE-${version}-win-${arch}-setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": false
     },
     "publish": null
   }

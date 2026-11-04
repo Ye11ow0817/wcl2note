@@ -18,7 +18,7 @@ import {
   ChartGantt,
   PanelRightClose,
   PanelRightOpen,
-  Settings2,
+  Settings,
   X,
 } from "lucide-react";
 import {
@@ -29,7 +29,7 @@ import {
   loadSettings,
   saveSettings,
 } from "../api/wcl/client";
-import type { CredentialMode, Credentials } from "../../shared/desktop";
+import type { Credentials } from "../../shared/desktop";
 import {
   defaults,
   selectionKey,
@@ -78,6 +78,11 @@ import type {
   ProfileSkillSearch,
 } from "../features/skill-profiles/SkillProfileSkillPicker";
 import { useSkillProfiles } from "../features/skill-profiles/useSkillProfiles";
+import { useAppUpdates } from "../features/updates/useAppUpdates";
+import {
+  UpdateActionButton,
+  UpdatePanel,
+} from "../features/updates/AppUpdates";
 import {
   EMPTY_SKILL_PROFILE,
   eventGroupKey,
@@ -121,6 +126,7 @@ interface FightDraft {
 export function App() {
   const shell = useKeyboardFocus<HTMLDivElement>();
   const profiles = useSkillProfiles();
+  const updates = useAppUpdates();
   const cache = useQueryClient(),
     [input, setInput] = useState(""),
     [ref, setRef] = useState<ReportRef>(),
@@ -141,14 +147,6 @@ export function App() {
     [profileSkills, setProfileSkills] = useState<ProfileSkill[]>(
       () => profiles.active.skills,
     ),
-    [selectionUndo, setSelectionUndo] = useState<{
-      selected: Set<string>;
-      overrides: Map<string, EventOverride>;
-      skills: ProfileSkill[];
-      profileId?: string;
-      focused?: string;
-      resolved: Set<string>;
-    }>(),
     [focusedEventId, setFocusedEventId] = useState<string>(),
     [noteFocusRequest, setNoteFocusRequest] = useState(0),
     [view, setView] = useState<"list" | "timeline">("list"),
@@ -158,15 +156,14 @@ export function App() {
     [dynamicTimers, setDynamicTimers] = useState(true),
     [options, setOptions] = useState<Options>(defaults),
     [settings, setSettings] = useState(false),
-    [mode, setMode] = useState<CredentialMode>("default"),
     [identity, setIdentity] = useState(0),
     [clientId, setClientId] = useState(""),
     [secret, setSecret] = useState(""),
+    [secretVisible, setSecretVisible] = useState(false),
     [authBusy, setAuthBusy] = useState(false),
     [settingsReady, setSettingsReady] = useState(false),
     [settingsStatus, setSettingsStatus] = useState(""),
     [version, setVersion] = useState(""),
-    [message, setMessage] = useState(""),
     [localError, setLocalError] = useState("");
   const authVersion = useRef(0),
     fightDrafts = useRef(new Map<number, FightDraft>()),
@@ -186,6 +183,9 @@ export function App() {
     else if (!settings && dialog?.open) dialog.close();
   }, [settings]);
   useEffect(() => {
+    if (!settings) setSecretVisible(false);
+  }, [settings]);
+  useEffect(() => {
     let active = true;
     void loadSettings()
       .then((saved) => {
@@ -196,7 +196,6 @@ export function App() {
         };
         setClientId(saved.clientId);
         setSecret(saved.clientSecret);
-        setMode(saved.mode);
         setSettingsReady(true);
       })
       .catch((error: Error) => {
@@ -697,7 +696,6 @@ export function App() {
     fightDrafts.current.clear();
     timelineStates.current.clear();
     resolvedProfileGroups.current = new Set();
-    setSelectionUndo(undefined);
     if (profiles.isEmpty) setProfileSkills([]);
     carriedActor.current = undefined;
     focusNote.current = false;
@@ -712,7 +710,6 @@ export function App() {
     setSource("");
     setRelatedFilters({});
     previousSource.current = undefined;
-    setMessage("");
     setLocalError("");
   }
   function loadReport() {
@@ -760,7 +757,6 @@ export function App() {
     setProfileSkills(
       draft?.profileSkills ?? (profiles.isEmpty ? [] : profileSkills),
     );
-    setSelectionUndo(undefined);
     const actor = filter;
     carriedActor.current = actor ? { fightId: f.id, node: actor } : undefined;
     focusNote.current = false;
@@ -775,13 +771,11 @@ export function App() {
     setSelected(draft?.selected ?? new Set());
     setEventOverrides(draft?.eventOverrides ?? new Map());
     setFocusedEventId(draft?.focusedEventId);
-    setMessage("");
     setLocalError("");
   }
   function chooseSegment(id: string) {
     setSegmentId(id);
     setFocusedEventId(undefined);
-    setMessage("");
   }
   async function persistCredentials(credentials: Credentials) {
     const version = ++authVersion.current;
@@ -797,7 +791,6 @@ export function App() {
       if (version !== authVersion.current) return;
       await cache.cancelQueries();
       cache.clear();
-      setMode(result.mode);
       setSettingsReady(true);
       setIdentity((v) => v + 1);
       setRef(undefined);
@@ -838,7 +831,6 @@ export function App() {
     setProfileSkills(
       updateProfileSkills(profileSkills, loadedEvents, next, overrides, keys),
     );
-    setSelectionUndo(undefined);
   }
   function skillSelection(keys: string[]) {
     const bounds =
@@ -880,7 +872,6 @@ export function App() {
         row.group.key,
       ]),
     );
-    setSelectionUndo(undefined);
   }
   function clearSelection() {
     try {
@@ -889,35 +880,10 @@ export function App() {
       setLocalError((error as Error).message);
       return;
     }
-    setSelectionUndo({
-      selected,
-      overrides: eventOverrides,
-      skills: profileSkills,
-      profileId: profiles.library.activeId,
-      focused: focusedEventId,
-      resolved: new Set(resolvedProfileGroups.current),
-    });
     setSelected(new Set());
     setEventOverrides(new Map());
     setProfileSkills([]);
     setFocusedEventId(undefined);
-    setMessage("已清除勾选");
-  }
-  function undoClearSelection() {
-    if (!selectionUndo) return;
-    try {
-      profiles.activate(selectionUndo.profileId);
-    } catch (error) {
-      setLocalError((error as Error).message);
-      return;
-    }
-    setSelected(selectionUndo.selected);
-    setEventOverrides(selectionUndo.overrides);
-    setProfileSkills(selectionUndo.skills);
-    setFocusedEventId(selectionUndo.focused);
-    resolvedProfileGroups.current = new Set(selectionUndo.resolved);
-    setSelectionUndo(undefined);
-    setMessage("已恢复勾选");
   }
   function applyProfile(profile: SkillProfile) {
     profiles.activate(profile.id);
@@ -927,12 +893,9 @@ export function App() {
     setEventOverrides(new Map());
     setRelatedFilters({});
     setFocusedEventId(undefined);
-    setSelectionUndo(undefined);
-    setMessage("已应用「" + profile.name + "」");
   }
   function removeProfileSkill(profile: SkillProfile, skill: ProfileSkill) {
     profiles.removeSkill(profile.id, skill);
-    setSelectionUndo(undefined);
     if (profile.id !== profiles.active.id) return;
     const key = profileSkillKey(skill);
     setProfileSkills((previous) =>
@@ -960,8 +923,6 @@ export function App() {
   function addProfileSkills(profile: SkillProfile, skills: ProfileSkill[]) {
     const added = profiles.addSkills(profile.id, skills);
     if (!added.length) return;
-    setSelectionUndo(undefined);
-    setMessage("已向「" + profile.name + "」添加 " + added.length + " 项技能");
     if (profile.id !== profiles.active.id) return;
     setProfileSkills((previous) =>
       uniqueProfileSkills([...previous, ...added]),
@@ -983,17 +944,13 @@ export function App() {
   async function copy() {
     try {
       unwrap(await desktop().copyNote(note));
-      setMessage(`已复制 ${noteFormat} 文本`);
     } catch {
-      setMessage("剪贴板不可用，请在预览框中全选并手动复制。");
+      setLocalError("剪贴板不可用，请在预览框中全选并手动复制。");
     }
   }
   async function download() {
     try {
-      const result = unwrap(
-        await desktop().saveNote(filename(`${title}.txt`), note),
-      );
-      if (!result.canceled) setMessage("已保存 UTF-8 文本");
+      unwrap(await desktop().saveNote(filename(`${title}.txt`), note));
     } catch (error) {
       setLocalError((error as Error).message);
     }
@@ -1036,22 +993,20 @@ export function App() {
           </button>
         </form>
         <div className="header-right">
-          <span className="mode">
-            <i />
-            {mode === "default"
-              ? "内置凭据"
-              : mode === "custom"
-                ? "自定义凭据"
-                : "凭据未填完整"}
-          </span>
+          <div className="header-update-slot">
+            <UpdateActionButton updates={updates} />
+          </div>
           <button
-            className={settings ? "icon-button active" : "icon-button"}
+            className={
+              settings ? "settings-trigger active" : "settings-trigger"
+            }
             onClick={() => setSettings(!settings)}
             aria-label="设置"
+            title="设置"
             aria-haspopup="dialog"
             aria-expanded={settings}
           >
-            <Settings2 size={19} />
+            <Settings size={18} />
           </button>
         </div>
       </header>
@@ -1245,7 +1200,6 @@ export function App() {
                       <button
                         onClick={() => {
                           void cache.cancelQueries();
-                          setMessage("已取消加载，点击重试重新读取。");
                         }}
                       >
                         取消
@@ -1572,30 +1526,6 @@ export function App() {
             </aside>
           )}
         </div>
-        <footer>
-          <span role="status">
-            {loading ? (
-              <>
-                <LoaderCircle size={12} className="spin" />
-                正在加载…
-              </>
-            ) : (
-              <>
-                <i />
-                {message || "就绪"}
-              </>
-            )}
-            {message.startsWith("已取消") && (
-              <button onClick={() => void cache.invalidateQueries()}>
-                重试
-              </button>
-            )}
-            {selectionUndo && message === "已清除勾选" && (
-              <button onClick={undoClearSelection}>撤销</button>
-            )}
-          </span>
-          <span>由 Warcraft Logs 数据生成 · By Ye11ow</span>
-        </footer>
       </main>
       <dialog
         ref={settingsDialog}
@@ -1605,7 +1535,7 @@ export function App() {
         onClose={() => setSettings(false)}
       >
         <div className="section-heading">
-          <h2 id="settings-title">Warcraft Logs 凭据</h2>
+          <h2 id="settings-title">设置</h2>
           <button
             className="icon-button"
             onClick={() => setSettings(false)}
@@ -1614,58 +1544,84 @@ export function App() {
             <X size={16} />
           </button>
         </div>
-        <p>
-          应用直接连接 Warcraft Logs，无需网页登录。留空使用内置凭据；填写自己的
-          Client ID 和 Client Secret 后自动保存到本机，下次启动继续使用。
-        </p>
-        <form onSubmit={(e) => e.preventDefault()}>
-          <label>
-            Client ID
-            <input
-              value={clientId}
-              onChange={(e) =>
-                void persistCredentials({
-                  ...credentialDraft.current,
-                  clientId: e.target.value,
-                })
-              }
-              autoComplete="off"
-            />
-          </label>
-          <label>
-            Client Secret
-            <input
-              type="password"
-              value={secret}
-              onChange={(e) =>
-                void persistCredentials({
-                  ...credentialDraft.current,
-                  clientSecret: e.target.value,
-                })
-              }
-              autoComplete="off"
-            />
-          </label>
-          <button
-            type="button"
-            disabled={authBusy}
-            onClick={() =>
-              void persistCredentials({ clientId: "", clientSecret: "" })
-            }
-          >
-            恢复默认
-          </button>
-        </form>
-        <p className="settings-status" aria-live="polite">
-          {settingsStatus ||
-            "凭据修改后自动保存；Client Secret 使用 Windows 本机加密。"}
-        </p>
-        {settings && error && (
-          <p className="settings-error" role="alert">
-            {error}
+        <section
+          className="settings-credentials"
+          aria-labelledby="credentials-title"
+        >
+          <div className="section-heading">
+            <h3 id="credentials-title">Warcraft Logs 凭据</h3>
+            <span className="credential-mode">
+              {!clientId && !secret
+                ? "使用内置凭据"
+                : clientId.trim() && secret.trim()
+                  ? "使用自定义凭据"
+                  : "凭据待补全"}
+            </span>
+          </div>
+          <p className="settings-description">
+            留空使用内置凭据，修改后自动保存。
           </p>
-        )}
-        <div className="settings-meta">
+          <form onSubmit={(e) => e.preventDefault()}>
+            <label>
+              Client ID
+              <input
+                value={clientId}
+                onChange={(e) =>
+                  void persistCredentials({
+                    ...credentialDraft.current,
+                    clientId: e.target.value,
+                  })
+                }
+                autoComplete="off"
+              />
+            </label>
+            <div className="settings-field">
+              <label htmlFor="settings-client-secret">Client Secret</label>
+              <span className="secret-input">
+                <input
+                  id="settings-client-secret"
+                  type={secretVisible ? "text" : "password"}
+                  value={secret}
+                  onChange={(e) =>
+                    void persistCredentials({
+                      ...credentialDraft.current,
+                      clientSecret: e.target.value,
+                    })
+                  }
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  aria-label={
+                    secretVisible ? "隐藏 Client Secret" : "显示 Client Secret"
+                  }
+                  aria-pressed={secretVisible}
+                  onClick={() => setSecretVisible((visible) => !visible)}
+                >
+                  {secretVisible ? "隐藏" : "显示"}
+                </button>
+              </span>
+            </div>
+          </form>
+          <div className="settings-save-row">
+            <p className="settings-status" aria-live="polite">
+              {settingsStatus || "凭据修改后自动保存。"}
+            </p>
+            <button
+              type="button"
+              disabled={authBusy}
+              onClick={() =>
+                void persistCredentials({ clientId: "", clientSecret: "" })
+              }
+            >
+              恢复默认
+            </button>
+          </div>
+          {settings && error && (
+            <p className="settings-error" role="alert">
+              {error}
+            </p>
+          )}
           <button
             className="link-button"
             onClick={() =>
@@ -1677,8 +1633,12 @@ export function App() {
           >
             申请 WCL API 凭据 ↗
           </button>
-          <span className="version">WCL2NOTE{version && ` / ${version}`}</span>
-        </div>
+        </section>
+        <UpdatePanel updates={updates} version={version} />
+        <footer className="settings-meta">
+          <span>WCL2NOTE</span>
+          <span>Ye11ow</span>
+        </footer>
       </dialog>
     </div>
   );

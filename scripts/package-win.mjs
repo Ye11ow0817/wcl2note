@@ -13,14 +13,6 @@ import { dirname, join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const metadata = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-const buildDate = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Asia/Shanghai",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-})
-  .format(new Date())
-  .replaceAll("-", "");
 const cache = join(root, ".cache");
 await mkdir(cache, { recursive: true });
 const app = await mkdtemp(join(cache, "packaged-app-"));
@@ -67,6 +59,7 @@ try {
       join(root, "node_modules/electron-builder/cli.js"),
       "--win",
       "--x64",
+      "--publish=never",
       `--config.directories.app=${app}`,
       `--config.directories.buildResources=${join(root, "build")}`,
       `--config.win.icon=${join(root, "build/icon.ico")}`,
@@ -80,7 +73,6 @@ try {
       windowsHide: true,
       env: {
         ...process.env,
-        WCL_BUILD_DATE: buildDate,
         ELECTRON_BUILDER_CACHE: join(cache, "electron-builder"),
         electron_config_cache: join(cache, "electron"),
       },
@@ -93,18 +85,14 @@ try {
     const output = resolve(root, metadata.build.directories.output);
     const values = {
       version: metadata.version,
-      "env.WCL_BUILD_DATE": buildDate,
       arch: "x64",
       ext: "exe",
     };
     const expand = (pattern) =>
-      pattern.replace(
-        /\$\{(version|env.WCL_BUILD_DATE|arch|ext)\}/g,
-        (_, key) => values[key],
-      );
+      pattern.replace(/\$\{(version|arch|ext)\}/g, (_, key) => values[key]);
     const expected = process.argv.includes("--dir")
       ? [join(output, "win-unpacked", `${metadata.productName}.exe`)]
-      : [metadata.build.portable.artifactName].map((pattern) =>
+      : [metadata.build.nsis.artifactName].map((pattern) =>
           join(output, expand(pattern)),
         );
     for (const artifact of expected) {

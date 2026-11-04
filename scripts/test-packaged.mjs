@@ -2,27 +2,17 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "@playwright/test";
 
-const latestPortable = process.argv[2]
-  ? undefined
-  : (await readdir("release"))
-      .filter((name) => /^WCL2NOTE-.+-\d{8}-win-x64-portable\.exe$/.test(name))
-      .sort(
-        (a, b) =>
-          a
-            .match(/\d{8}-win-x64/)[0]
-            .localeCompare(b.match(/\d{8}-win-x64/)[0]) || a.localeCompare(b),
-      )
-      .at(-1);
-if (!process.argv[2] && !latestPortable)
-  throw Error("No dated portable EXE found. Run npm run package:win first.");
-const executable = resolve(process.argv[2] ?? `release/${latestPortable}`);
-const output = resolve("test-results/portable");
+const metadata = JSON.parse(await readFile("package.json", "utf8"));
+const executable = resolve(
+  process.argv[2] ?? "release/win-unpacked/WCL2NOTE.exe",
+);
+const output = resolve("test-results/packaged");
 await mkdir(output, { recursive: true });
 const profile = resolve(output, `profile-${Date.now()}`);
 await mkdir(profile);
@@ -44,7 +34,7 @@ const child = spawn(
 );
 let browser;
 try {
-  console.log("Starting the portable Windows executable…");
+  console.log("Starting the packaged Windows executable…");
   let endpoint;
   const deadline = Date.now() + 30000;
   while (Date.now() < deadline) {
@@ -57,11 +47,11 @@ try {
         break;
       }
     } catch {
-      /* The portable launcher is still extracting and starting Electron. */
+      /* Electron is still starting. */
     }
     await delay(250);
   }
-  assert(endpoint, "Portable app did not start its local browser context");
+  assert(endpoint, "Packaged app did not start its local browser context");
   browser = await chromium.connectOverCDP(endpoint);
   const context = browser.contexts()[0];
   const page = context.pages()[0] ?? (await context.waitForEvent("page"));
@@ -81,24 +71,25 @@ try {
   assert.deepEqual(ready, {
     settingsOk: true,
     mode: "default",
-    version: "1.0.0",
+    version: metadata.version,
   });
   await page.getByRole("button", { name: "设置", exact: true }).click();
   await page
     .getByLabel("Client ID", { exact: true })
-    .fill("portable-fixture-id");
+    .fill("packaged-fixture-id");
   await page
     .getByLabel("Client Secret", { exact: true })
-    .fill("portable-fixture-secret");
+    .fill("packaged-fixture-secret");
   await page.waitForFunction(() =>
     document
       .querySelector(".settings-status")
       ?.textContent?.includes("已自动保存到本机"),
   );
   await page.getByRole("button", { name: "恢复默认" }).click();
-  await page.waitForFunction(() =>
-    document.querySelector(".mode")?.textContent?.includes("内置凭据"),
-  );
+  await page.waitForFunction(async () => {
+    const saved = await window.wcl2note.getSettings();
+    return saved.ok && saved.data.mode === "default";
+  });
   await page.getByRole("button", { name: "关闭设置" }).click();
   await page.getByRole("button", { name: "时间轴视图", exact: true }).click();
   assert.equal(await page.locator(".timeline-row").count(), 0);
@@ -111,7 +102,7 @@ try {
   });
   await page.close();
   console.log(
-    "PASS: portable EXE starts, uses IPC and encrypted settings, restores defaults, and shows the empty timeline before loading a report.",
+    "PASS: packaged EXE starts, uses IPC and encrypted settings, restores defaults, and shows the empty timeline before loading a report.",
   );
 } finally {
   await browser?.close().catch(() => {});

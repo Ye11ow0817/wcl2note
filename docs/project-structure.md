@@ -12,7 +12,7 @@ Electron 官方的 [Process Model](https://www.electronjs.org/docs/latest/tutori
 
 - WCL2NOTE 保留 `domain` 表达报告解析、事件筛选和笔记规则，`shared` 专门表达跨进程协议，比把业务代码全部归入 `shared` 更便于辨认职责。
 - 根目录的 `vite.config.ts`、`vitest.config.ts`、`playwright.config.ts` 和 `tsconfig*.json` 都是工具配置，应用代码仍在 `src/`。保留常规配置入口便于查找；移动到 `config/` 虽可减少根目录文件，但需维护显式配置路径及相对路径，当前收益有限。[Vite 配置说明](https://vite.dev/config/)支持默认发现与显式 `--config`，[TypeScript 配置说明](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)说明 `tsconfig.json` 与项目范围的关系。
-- WoWGearMatrix 将 `package`（生成包）与 `release`（测试、打包、成品验证及源码归档）分开，适合其完整发布准备流程。WCL2NOTE 当前入口只负责构建和打包，因此命名为 `package:win`；便携版检查单独使用 `test:portable`。以后若加入完整发布准备，应再增加职责明确的 `release:win`。
+- WoWGearMatrix 将 `package`（生成包）与 `release`（测试、打包、成品验证及源码归档）分开，适合其完整发布准备流程。WCL2NOTE 当前入口只负责构建和打包，因此命名为 `package:win`；目录版启动检查单独使用 `test:packaged`。以后若加入完整发布准备，应再增加职责明确的 `release:win`。
 - WCL2NOTE 的单元测试和桌面测试分别使用现有 Vitest、Playwright 框架；无需复制另一项目为普通 CommonJS 脚本编写的测试运行器。
 
 当前选择是统一进程与命令的语义，保留适合各自工具链的配置、领域和引擎结构。
@@ -54,7 +54,7 @@ wcl2note/
 │  └─ fixtures/                   # 公共测试数据与第三方脚本快照
 ├─ scripts/
 │  ├─ package-win.mjs            # Windows 打包与产物校验
-│  ├─ test-portable.mjs          # 便携版 EXE 冒烟测试
+│  ├─ test-packaged.mjs          # 已打包 EXE 冒烟测试
 │  └─ lib/electron-build.mjs      # 开发与生产共用主进程构建配置
 ├─ build/                        # electron-builder 打包资源
 ├─ data/wcl-buff-categories/      # 原始观察及生成依据
@@ -77,9 +77,9 @@ npm 命令使用 `操作:对象[:形式]`；脚本文件使用 `操作-对象` �
 | `npm run package:win:dir` | 构建并生成 Windows 目录版                                      |
 | `npm run test:unit`       | 单元测试；`npm test` 为同一入口                                |
 | `npm run test:electron`   | 构建并运行真实 Electron 集成测试，可用 `-- --grep=表达式` 筛选 |
-| `npm run test:portable`   | 检查已有便携版 EXE，可用 `-- EXE路径` 指定文件                 |
+| `npm run test:packaged`   | 检查已有目录版或已安装 EXE，可用 `-- EXE路径` 指定文件         |
 
-Windows 双击入口为 `package-win.cmd`，调用 `package:win`；打包实现为 `scripts/package-win.mjs`，便携版测试实现为 `scripts/test-portable.mjs`。原 `dist:win`、`pack:win`、`test:e2e` 命令和 `build-win.cmd`、`scripts/smoke-portable.mjs` 文件已替换为这些名称。
+Windows 双击入口为 `package-win.cmd`，调用 `package:win`；打包实现为 `scripts/package-win.mjs`，已打包程序测试实现为 `scripts/test-packaged.mjs`。原 `dist:win`、`pack:win`、`test:e2e` 命令和 `build-win.cmd`、`scripts/smoke-portable.mjs` 文件已替换为这些名称。
 
 ## 依赖方向
 
