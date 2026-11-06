@@ -74,6 +74,8 @@ try {
     version: metadata.version,
   });
   await page.getByRole("button", { name: "设置", exact: true }).click();
+  const reset = page.getByRole("button", { name: "恢复默认", exact: true });
+  assert(await reset.isDisabled());
   await page
     .getByLabel("Client ID", { exact: true })
     .fill("packaged-fixture-id");
@@ -85,11 +87,12 @@ try {
       .querySelector(".settings-status")
       ?.textContent?.includes("已自动保存到本机"),
   );
-  await page.getByRole("button", { name: "恢复默认" }).click();
+  await reset.click();
   await page.waitForFunction(async () => {
     const saved = await window.wcl2note.getSettings();
     return saved.ok && saved.data.mode === "default";
   });
+  assert(await reset.isDisabled());
   await page.getByRole("button", { name: "关闭设置" }).click();
   await page.getByRole("button", { name: "时间轴视图", exact: true }).click();
   assert.equal(await page.locator(".timeline-row").count(), 0);

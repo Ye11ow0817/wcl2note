@@ -1,7 +1,7 @@
 {
   "name": "wcl2note",
   "productName": "WCL2NOTE",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "将 Warcraft Logs 战斗记录转换为 MRT 团队笔记的 Windows 应用",
   "author": "Ye11ow",
   "private": true,
@@ -77,9 +77,13 @@
     ],
     "asar": true,
     "electronDist": "node_modules/electron/dist",
-    "npmRebuild": false,
+    "beforeBuild": "./scripts/trim-windows-runtime.mjs",
+    "afterPack": "./scripts/trim-windows-runtime.mjs",
     "win": {
       "icon": "build/icon.ico",
+      "electronLanguages": [
+        "zh-CN"
+      ],
       "target": [
         {
           "target": "nsis",
@@ -99,7 +103,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": false,
-      "runAfterFinish": false
+      "runAfterFinish": true
     },
     "publish": null
   }

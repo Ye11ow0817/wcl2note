@@ -1550,17 +1550,18 @@ export function App() {
         >
           <div className="section-heading">
             <h3 id="credentials-title">Warcraft Logs 凭据</h3>
-            <span className="credential-mode">
-              {!clientId && !secret
-                ? "使用内置凭据"
-                : clientId.trim() && secret.trim()
-                  ? "使用自定义凭据"
-                  : "凭据待补全"}
-            </span>
+            <button
+              className="settings-reset"
+              type="button"
+              disabled={authBusy || (!clientId && !secret)}
+              onClick={() =>
+                void persistCredentials({ clientId: "", clientSecret: "" })
+              }
+            >
+              恢复默认
+            </button>
           </div>
-          <p className="settings-description">
-            留空使用内置凭据，修改后自动保存。
-          </p>
+          <p className="settings-description">留空使用内置凭据。</p>
           <form onSubmit={(e) => e.preventDefault()}>
             <label>
               Client ID
@@ -1603,20 +1604,13 @@ export function App() {
               </span>
             </div>
           </form>
-          <div className="settings-save-row">
-            <p className="settings-status" aria-live="polite">
-              {settingsStatus || "凭据修改后自动保存。"}
-            </p>
-            <button
-              type="button"
-              disabled={authBusy}
-              onClick={() =>
-                void persistCredentials({ clientId: "", clientSecret: "" })
-              }
-            >
-              恢复默认
-            </button>
-          </div>
+          <p
+            className="settings-status"
+            aria-live="polite"
+            hidden={!settingsStatus}
+          >
+            {settingsStatus}
+          </p>
           {settings && error && (
             <p className="settings-error" role="alert">
               {error}
@@ -1634,10 +1628,9 @@ export function App() {
             申请 WCL API 凭据 ↗
           </button>
         </section>
-        <UpdatePanel updates={updates} version={version} />
+        {settings && <UpdatePanel updates={updates} />}
         <footer className="settings-meta">
-          <span>WCL2NOTE</span>
-          <span>Ye11ow</span>
+          WCL2NOTE {version || "…"} · Ye11ow
         </footer>
       </dialog>
     </div>

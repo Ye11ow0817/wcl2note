@@ -27,6 +27,9 @@ import { allowedUpdateUrl, UpdateService } from "./updates";
 
 app.setName("WCL2NOTE");
 app.setAppUserModelId("com.ye11ow.wcl2note");
+if (app.isPackaged && process.platform === "win32") {
+  app.commandLine.appendSwitch("lang", "zh-CN");
+}
 // Also allows a separate Windows profile for QA without touching the user's settings.
 const profile = process.argv
   .find((arg) => arg.startsWith("--user-data-dir="))

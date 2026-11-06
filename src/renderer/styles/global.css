@@ -1249,14 +1249,6 @@ textarea::placeholder {
 .settings-credentials {
   margin-top: 24px;
 }
-.credential-mode {
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  background: var(--surface-inset);
-  color: var(--text-secondary);
-  padding: 3px 8px;
-  font-size: 11px;
-}
 .settings .settings-description {
   margin: 8px 0 18px;
   color: var(--text-muted);
@@ -1315,24 +1307,12 @@ textarea::placeholder {
   color: var(--text-muted);
   opacity: 1;
 }
-.settings-save-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  min-height: 54px;
-}
-.settings-save-row > button {
-  flex-shrink: 0;
+.settings-reset {
   padding: 5px 10px;
   font-size: 12px;
   background: transparent;
 }
 .settings-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
@@ -2236,30 +2216,38 @@ textarea::placeholder {
   margin-top: 24px;
   padding-top: 20px;
 }
-.update-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 14px;
-}
-.update-version {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
 .update-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.update-panel .update-check-result {
-  margin: 8px 0 0;
-  color: var(--text-muted);
+.update-toast {
+  position: fixed;
+  z-index: 1;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-panel);
+  box-shadow: 0 4px 16px var(--shadow-dialog);
+  pointer-events: none;
 }
 .update-action {
+  position: relative;
+  overflow: hidden;
   min-width: 72px;
   font-variant-numeric: tabular-nums;
+}
+.update-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #27748a;
+  transition: width 150ms linear;
+}
+.update-action-label {
+  position: relative;
 }
 button.update-action[data-update-tone="available"] {
   background: #245b91;

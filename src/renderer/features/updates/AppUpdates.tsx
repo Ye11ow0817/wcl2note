@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { desktop } from "../../api/wcl/client";
 import { isNewerVersion } from "../../../shared/updates";
 import type { AppUpdates } from "./useAppUpdates";
@@ -21,7 +22,7 @@ export function UpdateActionButton({ updates }: { updates: AppUpdates }) {
   const label = failed
     ? "重试"
     : state.status === "downloading"
-      ? `下载 ${percent}%`
+      ? `${percent}%`
       : state.status === "verifying"
         ? "校验中…"
         : state.status === "installing"
@@ -59,19 +60,41 @@ export function UpdateActionButton({ updates }: { updates: AppUpdates }) {
         )
       }
     >
-      {label}
+      {state.status === "downloading" && (
+        <span
+          aria-hidden="true"
+          className="update-progress-fill"
+          style={{ width: `${percent}%` }}
+        />
+      )}
+      <span className="update-action-label">{label}</span>
     </button>
   );
 }
 
-export function UpdatePanel({
-  updates,
-  version,
-}: {
-  updates: AppUpdates;
-  version: string;
-}) {
+export function UpdatePanel({ updates }: { updates: AppUpdates }) {
   const { state, error, run } = updates;
+  const [toast, setToast] = useState("");
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(""), 3000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  async function checkForUpdates() {
+    setToast("");
+    const result = await run(() => desktop().checkForUpdates());
+    if (!result || result.errorPhase === "check") return;
+    if (result.status === "current") {
+      setToast("当前已是最新版本");
+    } else if (
+      result.release &&
+      isNewerVersion(result.release.version, result.currentVersion)
+    ) {
+      setToast(`有新版本v${result.release.version}`);
+    }
+  }
+
   const busy =
     !state ||
     ["checking", "downloading", "verifying", "installing"].includes(
@@ -81,31 +104,24 @@ export function UpdatePanel({
     error || (state?.errorPhase === "check" ? state.error : undefined);
   return (
     <section className="update-panel" aria-label="应用更新">
-      <h3>应用更新</h3>
-      <div className="update-summary">
-        <span className="update-version">当前版本 {version || "…"}</span>
-        <div className="update-actions">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void run(() => desktop().checkForUpdates())}
-          >
-            {state?.status === "checking" ? "检查中…" : "检查更新"}
-          </button>
-          <UpdateActionButton updates={updates} />
-        </div>
+      <div className="update-actions">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void checkForUpdates()}
+        >
+          {state?.status === "checking" ? "检查中…" : "检查更新"}
+        </button>
+        <UpdateActionButton updates={updates} />
       </div>
-      {checkError ? (
+      {checkError && (
         <p className="settings-error" role="alert">
           {checkError}
         </p>
-      ) : (
-        state?.status === "current" && (
-          <p className="update-check-result" role="status">
-            当前已是最新版本。
-          </p>
-        )
       )}
+      <div role="status" className="update-toast" hidden={!toast}>
+        {toast}
+      </div>
     </section>
   );
 }

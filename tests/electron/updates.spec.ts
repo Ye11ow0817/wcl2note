@@ -195,17 +195,16 @@ test("更新：无更新隐藏按钮，设置只保留检查与更新操作，�
   await expect(page.getByText("Ye11ow", { exact: false })).not.toBeVisible();
   await settings(page);
   await expect(page.locator(".settings-meta")).toContainText("Ye11ow");
-  await expect(panel(page).locator(".update-version")).toHaveText(
-    `当前版本 ${metadata.version}`,
+  await expect(page.locator(".settings-meta")).toHaveText(
+    `WCL2NOTE ${metadata.version} · Ye11ow`,
   );
+  await expect(panel(page).getByRole("heading")).toHaveCount(0);
   await expect(panel(page).getByRole("button")).toHaveCount(1);
   await mode(desktop, "current");
   await panel(page)
     .getByRole("button", { name: "检查更新", exact: true })
     .click();
-  await expect(panel(page).getByRole("status")).toHaveText(
-    "当前已是最新版本。",
-  );
+  await expect(panel(page).getByRole("status")).toHaveText("当前已是最新版本");
   await expect(headerAction(page)).toHaveCount(0);
   await mode(desktop, "failed");
   await panel(page)
@@ -218,6 +217,9 @@ test("更新：无更新隐藏按钮，设置只保留检查与更新操作，�
     .getByRole("button", { name: "检查更新", exact: true })
     .click();
   await expect(panel(page).getByRole("button")).toHaveCount(2);
+  await expect(panel(page).getByRole("status")).toHaveText(
+    `有新版本v${nextVersion}`,
+  );
   await expect(panel(page).locator(".update-action")).toHaveText("更新");
   await expect(headerAction(page)).toHaveText("更新");
   await expect(
@@ -236,7 +238,10 @@ test("更新：首页直接下载，设置同步百分比和颜色，校验后�
   await check(desktop, page);
   await mode(desktop, "slow");
   await headerAction(page).click();
-  await expect(headerAction(page)).toHaveText("下载 50%");
+  await expect(headerAction(page)).toHaveText("50%");
+  await expect(
+    headerAction(page).locator(".update-progress-fill"),
+  ).toHaveAttribute("style", "width: 50%;");
   await expect(headerAction(page)).toBeDisabled();
   await expect(headerAction(page)).toHaveAttribute(
     "data-update-tone",
@@ -246,7 +251,11 @@ test("更新：首页直接下载，设置同步百分比和颜色，校验后�
   await expect(
     panel(page).getByRole("button", { name: "检查更新", exact: true }),
   ).toBeDisabled();
-  await expect(panel(page).locator(".update-action")).toHaveText("下载 50%");
+  await expect(panel(page).locator(".update-action")).toHaveText("50%");
+  await expect(panel(page).locator(".update-progress-fill")).toHaveAttribute(
+    "style",
+    "width: 50%;",
+  );
   await expect(panel(page).locator(".update-action")).toBeDisabled();
   // Wait for each button to reach the download color after its transition.
   const downloadColor = "rgb(23, 79, 98)";

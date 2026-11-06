@@ -33,7 +33,7 @@ export function useAppUpdates() {
   const run = useCallback(async <T>(action: () => Promise<Reply<T>>) => {
     setError("");
     try {
-      unwrap(await action());
+      return unwrap(await action());
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "更新操作失败，请重试。",
