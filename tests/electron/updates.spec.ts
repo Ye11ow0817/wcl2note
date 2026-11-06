@@ -248,11 +248,12 @@ test("更新：首页直接下载，设置同步百分比和颜色，校验后�
   ).toBeDisabled();
   await expect(panel(page).locator(".update-action")).toHaveText("下载 50%");
   await expect(panel(page).locator(".update-action")).toBeDisabled();
+  // Wait for each button to reach the download color after its transition.
+  const downloadColor = "rgb(23, 79, 98)";
+  await expect(headerAction(page)).toHaveCSS("background-color", downloadColor);
   await expect(panel(page).locator(".update-action")).toHaveCSS(
     "background-color",
-    await headerAction(page).evaluate(
-      (button) => getComputedStyle(button).backgroundColor,
-    ),
+    downloadColor,
   );
   await page.screenshot({ path: info.outputPath("updates-progress.png") });
   await desktop.evaluate(() => {
