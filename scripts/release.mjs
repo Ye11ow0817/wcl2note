@@ -93,7 +93,10 @@ if (action === "latest") {
     schemaVersion: 1,
     version,
     publishedAt: previous?.publishedAt ?? new Date().toISOString(),
-    notes: (await readFile(resolve(root, "RELEASE_NOTES.md"), "utf8")).trim(),
+    // Windows packages the artifacts and Linux verifies them before publishing.
+    notes: (await readFile(resolve(root, "RELEASE_NOTES.md"), "utf8"))
+      .replace(/\r\n/g, "\n")
+      .trim(),
     releaseUrl: `${releaseRoot}/tag/v${version}`,
     artifacts,
   };
